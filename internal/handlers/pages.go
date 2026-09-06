@@ -82,19 +82,19 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 }
 
 func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, error) {
-	chapterID, _ := strconv.Atoi(p.Params["chapter_id"])
-	format, _ := strconv.Atoi(p.Params["format"])
+	chapterID := p.Params["chapter_id"]
+	format := p.Params["format"]
 	bookPageIndex := p.State["book_page"]
 	subPageIndex := p.State["sub_page"]
 
 	h.App.Logger.Debug(fmt.Sprintf(
-		"Rendering reader page: chapter=%d, format=%d, book_page=%d, sub_page=%d",
+		"Rendering reader page: chapter=%s, format=%s, book_page=%s, sub_page=%s",
 		chapterID, format, bookPageIndex, subPageIndex,
 	))
 
 	// Format 0: Manga / Comic
-	if format == 0 {
-		imgBytes, err := h.App.BookRepository.PageContent(ctx, strconv.Itoa(chapterID), subPageIndex)
+	if format != "epub" {
+		imgBytes, err := h.App.BookRepository.PageContent(ctx, chapterID, subPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch manga page %d: %w", subPageIndex, err)
 		}
@@ -106,7 +106,7 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	if cachedFrames, exists := h.App.FrameCache.GetAllFrames(chapterID, bookPageIndex); exists {
 		frames = cachedFrames
 	} else {
-		rawHTML, err := h.App.BookRepository.PageContent(ctx, strconv.Itoa(chapterID), bookPageIndex)
+		rawHTML, err := h.App.BookRepository.PageContent(ctx, chapterID, bookPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch book content (chapter %d, page %d): %w", chapterID, bookPageIndex, err)
 		}

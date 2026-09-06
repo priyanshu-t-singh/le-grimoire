@@ -56,7 +56,7 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if chapterID > 0 && h.App.FrameCache != nil {
-				h.App.FrameCache.Invalidate(chapterID)
+				h.App.FrameCache.Invalidate(fmt.Sprintf("%d", chapterID))
 			}
 		}
 	}

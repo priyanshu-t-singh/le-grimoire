@@ -19,16 +19,16 @@ func NewFrameCache() *FrameCache {
 	}
 }
 
-func (c *FrameCache) key(chapterID int, bookPageIndex int) string {
-	return fmt.Sprintf("chapter:%d:page:%d:v%d", chapterID, bookPageIndex, RenderVersion)
+func (c *FrameCache) key(chapterID string, bookPageIndex int) string {
+	return fmt.Sprintf("chapter:%s:page:%d:v%d", chapterID, bookPageIndex, RenderVersion)
 }
 
-func (c *FrameCache) chapterPrefix(chapterID int) string {
-	return fmt.Sprintf("chapter:%d:", chapterID)
+func (c *FrameCache) chapterPrefix(chapterID string) string {
+	return fmt.Sprintf("chapter:%s:", chapterID)
 }
 
 // Get returns a single rendered 24-line sub-page frame.
-func (c *FrameCache) Get(chapterID int, bookPageIndex int, subPageIndex int) ([]byte, bool) {
+func (c *FrameCache) Get(chapterID string, bookPageIndex int, subPageIndex int) ([]byte, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -39,7 +39,7 @@ func (c *FrameCache) Get(chapterID int, bookPageIndex int, subPageIndex int) ([]
 	return pageFrames[subPageIndex], true
 }
 
-func (c *FrameCache) GetAllFrames(chapterID int, bookPageIndex int) ([][]byte, bool) {
+func (c *FrameCache) GetAllFrames(chapterID string, bookPageIndex int) ([][]byte, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -50,25 +50,25 @@ func (c *FrameCache) GetAllFrames(chapterID int, bookPageIndex int) ([][]byte, b
 	return frames, true
 }
 
-func (c *FrameCache) Set(chapterID int, bookPageIndex int, frames [][]byte) {
+func (c *FrameCache) Set(chapterID string, bookPageIndex int, frames [][]byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.frames[c.key(chapterID, bookPageIndex)] = frames
 }
 
-func (c *FrameCache) FrameCount(chapterID int, bookPageIndex int) int {
+func (c *FrameCache) FrameCount(chapterID string, bookPageIndex int) int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.frames[c.key(chapterID, bookPageIndex)])
 }
 
-func (c *FrameCache) InvalidatePage(chapterID int, bookPageIndex int) {
+func (c *FrameCache) InvalidatePage(chapterID string, bookPageIndex int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.frames, c.key(chapterID, bookPageIndex))
 }
 
-func (c *FrameCache) InvalidateChapter(chapterID int) {
+func (c *FrameCache) InvalidateChapter(chapterID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -80,6 +80,6 @@ func (c *FrameCache) InvalidateChapter(chapterID int) {
 	}
 }
 
-func (c *FrameCache) Invalidate(chapterID int) {
+func (c *FrameCache) Invalidate(chapterID string) {
 	c.InvalidateChapter(chapterID)
 }
