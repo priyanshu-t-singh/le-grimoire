@@ -4,10 +4,12 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 
+	"modernc.org/sqlite"
 	_ "modernc.org/sqlite"
 )
 
@@ -37,6 +39,15 @@ func main() {
 	query := `INSERT INTO devices (device_id, api_key_hash, created_at) VALUES (?, ?, CURRENT_TIMESTAMP);`
 	_, err = db.Exec(query, *deviceID, keyHash)
 	if err != nil {
+		// Check if the error is due to a unique constraint violation
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			// 2067 = SQLITE_CONSTRAINT_UNIQUE
+			// 1555 = SQLITE_CONSTRAINT_PRIMARYKEY
+			if sqliteErr.Code() == 2067 || sqliteErr.Code() == 1555 {
+				log.Fatalf("Device ID %s already exists (unique constraint violation)", *deviceID)
+			}
+		}
 		log.Fatalf("Failed to insert device: %v", err)
 	}
 
