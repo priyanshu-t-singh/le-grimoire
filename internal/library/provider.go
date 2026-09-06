@@ -4,7 +4,7 @@ import "context"
 
 type BookProvider interface {
 	Connect(ctx context.Context) error
-	Libraries(ctx context.Context) ([]Library, error)
+	GetLibraries(ctx context.Context) ([]Library, error)
 	Books(ctx context.Context, libraryID string) ([]Book, error)
 	BookDetail(ctx context.Context, bookID string) (*Book, error)
 

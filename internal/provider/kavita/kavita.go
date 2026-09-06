@@ -45,3 +45,22 @@ func (p *Provider) Connect(ctx context.Context) error {
 	p.token = resp.Token
 	return nil
 }
+
+func (p *Provider) GetLibraries(ctx context.Context) ([]library.Library, error) {
+	var raw []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+
+	err := p.doRequest(ctx, "GET", "/api/Library/libraries", nil, &raw)
+	if err != nil {
+		return nil, fmt.Errorf("get libraries: %w", err)
+	}
+
+	libraries := make([]library.Library, len(raw))
+	for i, r := range raw {
+		libraries[i] = mapKavitaLibraryToLibrary(r)
+	}
+
+	return libraries, nil
+}
