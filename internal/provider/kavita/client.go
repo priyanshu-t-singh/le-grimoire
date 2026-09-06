@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"le-grimoire/internal/library"
 	"net/http"
 	"time"
@@ -77,4 +78,36 @@ func (p *Provider) doRequestWithRetry(ctx context.Context, method, path string, 
 		time.Sleep(500 * time.Millisecond)
 	}
 	return lastErr
+}
+
+func (p *Provider) doRequestRawBytes(ctx context.Context, method, path string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, method, p.baseURL+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	if p.token != "" {
+		req.Header.Set("Authorization", "Bearer "+p.token)
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("request to %s timed out: %w", path, ctx.Err())
+		}
+		return nil, fmt.Errorf("request to %s failed: %w", path, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, library.ErrUnauthenticated
+	}
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("kavita returned status %d for %s: %s", resp.StatusCode, path, string(body))
+	}
+
+	return io.ReadAll(resp.Body)
 }

@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+const (
+	pathImagePage = "/api/reader/image"
+	pathBookPage  = "/api/book/%d/book-page"
+)
+
 type Provider struct {
 	library.BookProvider
 	baseURL    string
@@ -94,4 +99,50 @@ func (p *Provider) GetChapters(ctx context.Context, bookID string) ([]library.Ch
 		return nil, fmt.Errorf("%w: no chapters found for book %s", library.ErrNotFound, bookID)
 	}
 	return chapters, nil
+}
+
+func (p *Provider) PageContent(ctx context.Context, chapterID string, page int) (*library.PageContent, error) {
+	chID, err := strconv.Atoi(chapterID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chapter id %q: %w", chapterID, err)
+	}
+
+	info, err := p.chapterInfoRaw(ctx, chID)
+	if err != nil {
+		return nil, fmt.Errorf("get page content: %w", err)
+	}
+
+	switch mangaFormat(info.SeriesFormat) {
+	case formatEpub:
+		return p.fetchBookPage(ctx, chID, page)
+	default: // comic, pdf-as-images, archive
+		return p.fetchImagePage(ctx, chID, page)
+	}
+}
+
+func (p *Provider) fetchImagePage(ctx context.Context, chapterID, page int) (*library.PageContent, error) {
+	path := fmt.Sprintf("%s?chapterId=%d&page=%d&apiKey=%s", pathImagePage, chapterID, page, p.apiKey)
+	data, err := p.doRequestRawBytes(ctx, "GET", path)
+	if err != nil {
+		return nil, fmt.Errorf("fetch image page: %w", err)
+	}
+	return &library.PageContent{Type: library.ContentImage, Data: data}, nil
+}
+
+func (p *Provider) fetchBookPage(ctx context.Context, chapterID, page int) (*library.PageContent, error) {
+	path := fmt.Sprintf(pathBookPage+"?page=%d", chapterID, page)
+	data, err := p.doRequestRawBytes(ctx, "GET", path)
+	if err != nil {
+		return nil, fmt.Errorf("fetch book page: %w", err)
+	}
+	return &library.PageContent{Type: library.ContentHTML, Data: data}, nil
+}
+
+func (p *Provider) chapterInfoRaw(ctx context.Context, chapterID int) (*chapterInfoResponse, error) {
+	var info chapterInfoResponse
+	path := fmt.Sprintf("/api/reader/chapter-info?chapterId=%d", chapterID)
+	if err := p.doRequest(ctx, "GET", path, nil, &info); err != nil {
+		return nil, err
+	}
+	return &info, nil
 }

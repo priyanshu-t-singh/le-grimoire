@@ -69,3 +69,8 @@ func flattenVolumes(seriesID string, volumes []kavitaVolume) []library.Chapter {
 	})
 	return chapters
 }
+
+type chapterInfoResponse struct {
+	SeriesFormat int `json:"seriesFormat"`
+	Pages        int `json:"pages"`
+}
