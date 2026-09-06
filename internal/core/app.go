@@ -5,7 +5,6 @@ import (
 	"le-grimoire/internal/config"
 	"le-grimoire/internal/constants"
 	"le-grimoire/internal/device"
-	"le-grimoire/internal/kavita"
 	"le-grimoire/internal/library"
 	"le-grimoire/internal/provider"
 	"le-grimoire/internal/render"
@@ -24,7 +23,6 @@ type App struct {
 	Version  string
 
 	// Repository
-	KavitaRepository kavita.Repository
 	DeviceRepository *device.Repository
 
 	// Dependencies Interfaces

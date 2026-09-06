@@ -40,7 +40,7 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 
 	switch top.Type {
 	case state.PageLibrary:
-		libraries, err := h.App.KavitaRepository.GetLibraries(ctx)
+		libraries, err := h.App.BookRepository.GetLibraries(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("fetch libraries: %w", err)
 		}
@@ -51,8 +51,7 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		return h.App.Renderer.RenderListPage(ctx, html)
 
 	case state.PageSeries:
-		libID, _ := strconv.Atoi(top.Params["library_id"])
-		seriesList, err := h.App.KavitaRepository.GetSeries(ctx, libID)
+		seriesList, err := h.App.BookRepository.GetBooks(ctx, top.Params["library_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch series: %w", err)
 		}
@@ -63,8 +62,7 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		return h.App.Renderer.RenderListPage(ctx, html)
 
 	case state.PageBookList:
-		seriesID, _ := strconv.Atoi(top.Params["series_id"])
-		chapters, err := h.App.KavitaRepository.GetFlattenedChapters(ctx, seriesID)
+		chapters, err := h.App.BookRepository.GetChapters(ctx, top.Params["series_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch chapters: %w", err)
 		}
@@ -95,13 +93,12 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	))
 
 	// Format 0: Manga / Comic
-	// TODO: Requires testing
 	if format == 0 {
-		imgBytes, err := h.App.KavitaRepository.GetChapterPageImage(ctx, chapterID, subPageIndex)
+		imgBytes, err := h.App.BookRepository.PageContent(ctx, strconv.Itoa(chapterID), subPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch manga page %d: %w", subPageIndex, err)
 		}
-		return render.ProcessMangaImage(imgBytes)
+		return render.ProcessMangaImage(imgBytes.Data)
 	}
 
 	// Format 1+: Book / EPUB
@@ -109,13 +106,12 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	if cachedFrames, exists := h.App.FrameCache.GetAllFrames(chapterID, bookPageIndex); exists {
 		frames = cachedFrames
 	} else {
-		rawHTML, err := h.App.KavitaRepository.GetBookPage(ctx, chapterID, bookPageIndex)
+		rawHTML, err := h.App.BookRepository.PageContent(ctx, strconv.Itoa(chapterID), bookPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch book content (chapter %d, page %d): %w", chapterID, bookPageIndex, err)
 		}
 
-		cleanHTML := render.SanitizeEPUBHTML(rawHTML, h.App.Config.GetKavitaAPIURI())
-		renderedHTML, err := render.BuildReaderHTML(cleanHTML)
+		renderedHTML, err := render.BuildReaderHTML(string(rawHTML.Data))
 		if err != nil {
 			return nil, fmt.Errorf("build reader html: %w", err)
 		}

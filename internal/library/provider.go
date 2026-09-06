@@ -13,7 +13,7 @@ type BookProvider interface {
 	// Chapters: reading units in order. A single-file book (epub/pdf/cbz)
 	// just returns one synthetic chapter.
 	GetChapters(ctx context.Context, bookID string) ([]Chapter, error)
-	// GetChapterInfo(ctx context.Context, chapterID string) (*ChapterInfo, error)
+	GetChapterInfo(ctx context.Context, chapterID string) (*ChapterInfo, error)
 
 	// Content returns raw page content — could be an image, HTML, or plain text.
 	// The Renderer decides what to do with it based on ContentType.

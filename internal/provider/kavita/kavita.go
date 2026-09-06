@@ -101,6 +101,20 @@ func (p *Provider) GetChapters(ctx context.Context, bookID string) ([]library.Ch
 	return chapters, nil
 }
 
+func (p *Provider) GetChapterInfo(ctx context.Context, chapterID string) (*library.ChapterInfo, error) {
+	chID, err := strconv.Atoi(chapterID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chapter id %q: %w", chapterID, err)
+	}
+
+	info, err := p.chapterInfoRaw(ctx, chID)
+	if err != nil {
+		return nil, fmt.Errorf("get chapter info: %w", err)
+	}
+
+	return mapChapterInfo(info), nil
+}
+
 func (p *Provider) PageContent(ctx context.Context, chapterID string, page int) (*library.PageContent, error) {
 	chID, err := strconv.Atoi(chapterID)
 	if err != nil {
@@ -114,7 +128,12 @@ func (p *Provider) PageContent(ctx context.Context, chapterID string, page int) 
 
 	switch mangaFormat(info.SeriesFormat) {
 	case formatEpub:
-		return p.fetchBookPage(ctx, chID, page)
+		html, err := p.fetchBookPage(ctx, chID, page)
+		if err != nil {
+			return nil, fmt.Errorf("fetch book page: %w", err)
+		}
+		html.Data = sanitizeEPUBHTML(html.Data, p.baseURL)
+		return html, nil
 	default: // comic, pdf-as-images, archive
 		return p.fetchImagePage(ctx, chID, page)
 	}

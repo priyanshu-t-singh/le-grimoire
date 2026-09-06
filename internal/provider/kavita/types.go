@@ -85,9 +85,10 @@ type kavitaVolume struct {
 }
 
 type kavitaChapter struct {
-	ID       int    `json:"id"`
-	Number   string `json:"number"` // Kavita stores this as string, e.g. "1", "1.5"
-	Title    string `json:"titleName"`
-	Pages    int    `json:"pages"`
-	VolumeID int    `json:"volumeId"`
+	ID        int    `json:"id"`
+	Number    string `json:"number"`
+	Title     string `json:"titleName"`
+	Pages     int    `json:"pages"`
+	VolumeID  int    `json:"volumeId"`
+	IsSpecial bool   `json:"isSpecial"`
 }

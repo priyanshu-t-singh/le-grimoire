@@ -36,4 +36,5 @@ type Chapter struct {
 type ChapterInfo struct {
 	ChapterID  string
 	TotalPages int
+	Format     string // "epub", "pdf", "cbz", "comic"...
 }
