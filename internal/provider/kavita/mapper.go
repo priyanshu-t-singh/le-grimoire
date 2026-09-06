@@ -2,6 +2,7 @@ package kavita
 
 import (
 	"le-grimoire/internal/library"
+	"sort"
 	"strconv"
 )
 
@@ -37,4 +38,34 @@ func mapSeriesListToBooks(list []kavitaSeries) []library.Book {
 		books = append(books, mapSeriesToBook(s))
 	}
 	return books
+}
+
+func mapChapter(seriesID string, c kavitaChapter) library.Chapter {
+	num, err := strconv.ParseFloat(c.Number, 64)
+	if err != nil {
+		num = 0 // fallback for non-numeric chapter labels ("Special", etc.)
+	}
+	return library.Chapter{
+		ID:     strconv.Itoa(c.ID),
+		BookID: seriesID,
+		Number: num,
+		Title:  c.Title,
+	}
+}
+
+// flattenVolumes walks volumes in order and collects their chapters,
+// producing a single reading-order list
+func flattenVolumes(seriesID string, volumes []kavitaVolume) []library.Chapter {
+	var chapters []library.Chapter
+	for _, v := range volumes {
+		for _, c := range v.Chapters {
+			chapters = append(chapters, mapChapter(seriesID, c))
+		}
+	}
+	// Kavita doesn't guarantee cross-volume chapter ordering in the raw
+	// response, so sort explicitly by Number to be safe.
+	sort.Slice(chapters, func(i, j int) bool {
+		return chapters[i].Number < chapters[j].Number
+	})
+	return chapters
 }

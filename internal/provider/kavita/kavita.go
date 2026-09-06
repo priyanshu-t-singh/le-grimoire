@@ -75,3 +75,22 @@ func (p *Provider) GetBooks(ctx context.Context, libraryID string) ([]library.Bo
 
 	return mapSeriesListToBooks(raw), nil
 }
+
+func (p *Provider) GetChapters(ctx context.Context, bookID string) ([]library.Chapter, error) {
+	seriesID, err := strconv.Atoi(bookID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid book id %q: %w", bookID, err)
+	}
+
+	var volumes []kavitaVolume
+	path := fmt.Sprintf("/api/Series/volumes?seriesId=%d", seriesID)
+	if err := p.doRequest(ctx, "GET", path, nil, &volumes); err != nil {
+		return nil, fmt.Errorf("get chapters for book %s: %w", bookID, err)
+	}
+
+	chapters := flattenVolumes(bookID, volumes)
+	if len(chapters) == 0 {
+		return nil, fmt.Errorf("%w: no chapters found for book %s", library.ErrNotFound, bookID)
+	}
+	return chapters, nil
+}

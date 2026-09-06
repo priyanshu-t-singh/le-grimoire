@@ -60,3 +60,17 @@ func defaultSeriesFilter() seriesFilterV2Request {
 		SortOptions: sortOptions{SortField: 1, IsAscending: true},
 	}
 }
+
+type kavitaVolume struct {
+	ID       int             `json:"id"`
+	Number   int             `json:"number"`
+	Chapters []kavitaChapter `json:"chapters"`
+}
+
+type kavitaChapter struct {
+	ID       int    `json:"id"`
+	Number   string `json:"number"` // Kavita stores this as string, e.g. "1", "1.5"
+	Title    string `json:"titleName"`
+	Pages    int    `json:"pages"`
+	VolumeID int    `json:"volumeId"`
+}
