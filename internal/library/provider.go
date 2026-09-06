@@ -2,11 +2,13 @@ package library
 
 import "context"
 
+// TODO: Add pagination support to all methods that return lists of items,
+// so we can support large libraries without running into memory issues.
 type BookProvider interface {
 	Connect(ctx context.Context) error
 	GetLibraries(ctx context.Context) ([]Library, error)
-	Books(ctx context.Context, libraryID string) ([]Book, error)
-	BookDetail(ctx context.Context, bookID string) (*Book, error)
+	GetBooks(ctx context.Context, libraryID string) ([]Book, error)
+	// GetBookDetail(ctx context.Context, bookID string) (*Book, error)
 
 	// Chapters: reading units in order. A single-file book (epub/pdf/cbz)
 	// just returns one synthetic chapter.

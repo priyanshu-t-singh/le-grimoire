@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"le-grimoire/internal/library"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -47,20 +48,30 @@ func (p *Provider) Connect(ctx context.Context) error {
 }
 
 func (p *Provider) GetLibraries(ctx context.Context) ([]library.Library, error) {
-	var raw []struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	}
+	var raw []kavitaLibrary
 
 	err := p.doRequest(ctx, "GET", "/api/Library/libraries", nil, &raw)
 	if err != nil {
 		return nil, fmt.Errorf("get libraries: %w", err)
 	}
 
-	libraries := make([]library.Library, len(raw))
-	for i, r := range raw {
-		libraries[i] = mapKavitaLibraryToLibrary(r)
+	return mapLibraryListToLibraries(raw), nil
+}
+
+func (p *Provider) GetBooks(ctx context.Context, libraryID string) ([]library.Book, error) {
+	libID, err := strconv.Atoi(libraryID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid library id %q: %w", libraryID, err)
 	}
 
-	return libraries, nil
+	// TODO: Kavita API v2 supports pagination, but we currently don't support it.
+	// For now, we just fetch the first page with a large page size.
+	path := fmt.Sprintf("/api/series/v2?libraryId=%d&pageNumber=1&pageSize=100", libID)
+
+	var raw []kavitaSeries
+	if err := p.doRequest(ctx, "POST", path, defaultSeriesFilter(), &raw); err != nil {
+		return nil, fmt.Errorf("get books for library %s: %w", libraryID, err)
+	}
+
+	return mapSeriesListToBooks(raw), nil
 }
