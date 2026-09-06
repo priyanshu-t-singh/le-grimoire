@@ -66,10 +66,11 @@ func (p *Provider) GetBooks(ctx context.Context, libraryID string) ([]library.Bo
 
 	// TODO: Kavita API v2 supports pagination, but we currently don't support it.
 	// For now, we just fetch the first page with a large page size.
-	path := fmt.Sprintf("/api/series/v2?libraryId=%d&pageNumber=1&pageSize=100", libID)
+	path := "/api/series/v2?pageNumber=1&pageSize=100"
+	filter := defaultSeriesFilter().addLibraryFilter(libID)
 
 	var raw []kavitaSeries
-	if err := p.doRequest(ctx, "POST", path, defaultSeriesFilter(), &raw); err != nil {
+	if err := p.doRequest(ctx, "POST", path, filter, &raw); err != nil {
 		return nil, fmt.Errorf("get books for library %s: %w", libraryID, err)
 	}
 

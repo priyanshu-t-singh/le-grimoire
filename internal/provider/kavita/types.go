@@ -1,5 +1,7 @@
 package kavita
 
+import "strconv"
+
 type kavitaLibrary struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -41,11 +43,17 @@ func (f mangaFormat) toDomain() string {
 	}
 }
 
+type filterStatement struct {
+	Field      int    `json:"field"`
+	Value      string `json:"value"`
+	Comparison int    `json:"comparison"`
+}
+
 type seriesFilterV2Request struct {
-	Statements  []interface{} `json:"statements"`
-	Combination int           `json:"combination"`
-	LimitTo     int           `json:"limitTo"`
-	SortOptions sortOptions   `json:"sortOptions"`
+	Statements  []filterStatement `json:"statements"`
+	Combination int               `json:"combination"`
+	LimitTo     int               `json:"limitTo"`
+	SortOptions sortOptions       `json:"sortOptions"`
 }
 
 type sortOptions struct {
@@ -55,10 +63,19 @@ type sortOptions struct {
 
 func defaultSeriesFilter() seriesFilterV2Request {
 	return seriesFilterV2Request{
-		Statements:  []interface{}{},
+		Statements:  []filterStatement{},
 		Combination: 0,
 		SortOptions: sortOptions{SortField: 1, IsAscending: true},
 	}
+}
+
+func (s seriesFilterV2Request) addLibraryFilter(libraryID int) seriesFilterV2Request {
+	s.Statements = append(s.Statements, filterStatement{
+		Field:      19, // LibraryId
+		Value:      strconv.Itoa(libraryID),
+		Comparison: 0, // Equal
+	})
+	return s
 }
 
 type kavitaVolume struct {
