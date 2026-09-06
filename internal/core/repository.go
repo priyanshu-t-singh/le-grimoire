@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"le-grimoire/internal/device"
@@ -33,6 +34,11 @@ func (a *App) InitRepositories() {
 		a.Logger.Warn("Initial Kavita auth failed (will retry reactively on requests)", "error", err)
 	} else {
 		a.Logger.Info("Successfully authenticated with Kavita server")
+	}
+
+	// one-time auth at boot
+	if err := a.BookRepository.Connect(context.Background()); err != nil {
+		log.Fatal(err)
 	}
 
 	// Initialize Device Repository

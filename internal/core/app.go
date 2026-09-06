@@ -28,7 +28,7 @@ type App struct {
 	DeviceRepository *device.Repository
 
 	// Dependencies Interfaces
-	BookRepository *library.BookProvider
+	BookRepository library.BookProvider
 
 	StateMachine *state.Machine
 	Renderer     *render.Renderer
@@ -59,6 +59,6 @@ func NewApp(configOpts *config.ConfigOptions) *App {
 		Logger:         logger,
 		Database:       nil,
 		Version:        constants.Version,
-		BookRepository: &bookProvider,
+		BookRepository: bookProvider,
 	}
 }

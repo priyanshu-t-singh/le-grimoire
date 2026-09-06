@@ -1,8 +1,6 @@
 package constants
 
-import (
-	"time"
-)
+import "time"
 
 const (
 	DefaultHost = "127.0.0.1"
@@ -25,8 +23,7 @@ const (
 	DisplayWidth  = 400
 )
 
-// TODO: move it to .config/le-grimoire/config.toml and make it configurable
-// TODO: get the config path from env or default to $HOME/.config/le-grimoire/config.toml
+// $HOME/.config/le-grimoire/config.toml
 const (
 	ConfigFileName = "config.toml"
 )
