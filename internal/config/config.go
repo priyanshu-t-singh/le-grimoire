@@ -1,4 +1,4 @@
-package core
+package config
 
 import (
 	"errors"
@@ -26,6 +26,10 @@ type Config struct {
 	Database struct {
 		Name string
 	}
+
+	BookBackend  string // "kavita" | "localfs"
+	KavitaURL    string
+	KavitaAPIKey string
 }
 
 type ConfigOptions struct {
@@ -46,6 +50,11 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 
 	if flags.DataDir != "" {
 		definedDataDir = flags.DataDir
+	}
+
+	bookBackend := "kavita" // default backend
+	if os.Getenv("BOOK_BACKEND") != "" {
+		bookBackend = os.Getenv("BOOK_BACKEND")
 	}
 
 	defaultHost := constants.DefaultHost
@@ -92,6 +101,7 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	viper.SetDefault("server.port", defaultPort)
 	viper.SetDefault("database.name", "le-grimoire")
 	viper.SetDefault("logs.dir", "$LE_GRIMOIRE_DATA_DIR/logs")
+	viper.SetDefault("bookbackend", bookBackend)
 
 	// Create and populate the config file if it doesn't exist
 	if err := createConfigFile(configPath); err != nil {

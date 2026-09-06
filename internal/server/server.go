@@ -1,6 +1,7 @@
 package server
 
 import (
+	"le-grimoire/internal/config"
 	"le-grimoire/internal/core"
 	"le-grimoire/internal/handlers"
 	"log"
@@ -19,10 +20,10 @@ func startApp() {
 	}
 
 	// Get the flags
-	flags := core.GetLeGrimoireFlags()
+	flags := config.GetLeGrimoireFlags()
 
 	// Create the app instance
-	app := core.NewApp(&core.ConfigOptions{Flags: flags})
+	app := core.NewApp(&config.ConfigOptions{Flags: flags})
 	app.InitLogging()
 	app.InitDatabase()
 	app.InitRepositories()
