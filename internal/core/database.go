@@ -7,9 +7,9 @@ import (
 
 func (a *App) InitDatabase() {
 	dbPath := filepath.Join(a.Config.AppDataDir, a.Config.Database.Name) + ".db"
-	db, err := database.SetupDatabase(dbPath)
+	db, err := database.Open(dbPath)
 	if err != nil {
-		a.Logger.Error("failed to setup database", "err", err)
+		a.Logger.Error("failed to open database", "err", err)
 		panic(err)
 	}
 	a.Database = db

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"le-grimoire/internal/constants"
-	"le-grimoire/internal/util"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -155,11 +154,6 @@ func (cfg *Config) GetServerAddr() string {
 
 func (cfg *Config) GetServerURI() string {
 	return fmt.Sprintf("http://%s", cfg.GetServerAddr())
-}
-
-// TODO: remove this func
-func (cfg *Config) GetKavitaAPIURI() string {
-	return util.GetKavitaAPIKey()
 }
 
 func initAppDataDir(definedDataDir string, logger *slog.Logger) (dataDir string, configPath string, err error) {

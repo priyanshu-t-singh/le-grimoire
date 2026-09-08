@@ -13,15 +13,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// TODO: This function is not required
-func SetupDatabase(dbPath string) (*sql.DB, error) {
-	db, err := Open(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("db failed to open: %w", err)
-	}
-	return db, nil
-}
-
 func Open(dbPath string) (*sql.DB, error) {
 	// Create Directory if not exists
 	if err := os.MkdirAll(filepath.Dir(dbPath), 0o755); err != nil {

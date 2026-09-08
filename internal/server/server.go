@@ -9,18 +9,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func StartServer() {
-	startApp()
+func StartServer(flags config.LeGrimoireFlags) {
+	startApp(flags)
 }
 
-func startApp() {
+func startApp(flags config.LeGrimoireFlags) {
 	// Load .env file if it exists
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
-
-	// Get the flags
-	flags := config.GetLeGrimoireFlags()
 
 	// Create the app instance
 	app := core.NewApp(&config.ConfigOptions{Flags: flags})

@@ -26,6 +26,6 @@ func init() {
 }
 
 func runServer(ctx context.Context) error {
-	server.StartServer()
+	server.StartServer(AppFlags)
 	return nil
 }
