@@ -109,4 +109,4 @@ checksums: ## Generate SHA256 checksums for release binaries
 	@echo "Checksums written to $(RELEASE_DIR)/$(VERSION)/checksums.txt"
 
 register-device: ## Register a device (usage: make register-device ID=... KEY=...)
-	go run cmd/register-device/main.go -id "$(ID)" -key "$(KEY)" -db ".db/database.sqlite"
+	go run cmd/register-device/main.go -id "$(ID)" -key "$(KEY)" -db "$(HOME)/.config/le-grimoire/le-grimoire.db"
