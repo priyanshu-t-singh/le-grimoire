@@ -1,19 +1,15 @@
 package constants
 
-import "time"
-
 const (
 	DefaultHost = "127.0.0.1"
 	DefaultPort = 8321
 )
 
 // NOTE: Injected at build time using ldflags, default is `dev` for local development
-var Version = "v1.1.0-dev"
+var Version = "v1.2.1-dev"
 
 const (
-	KavitaAPIBaseURL    = "http://kavita:5000"
-	KavitaAPIPluginName = "le-grimoire"
-	KavitaAPITimeout    = 10 * time.Second
+	KavitaAPIBaseURL = "http://kavita:5000"
 )
 
 // TODO: Make this configurable for each device type, and/or make it auto-detectable
