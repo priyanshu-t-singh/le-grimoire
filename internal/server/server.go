@@ -28,8 +28,18 @@ func startApp(flags config.LeGrimoireFlags) {
 	// Initialize the HTTP server
 	router := core.NewHTTPServer()
 
+	// Wire concrete deps into the handler via narrow interfaces.
+	h := &handlers.Handler{
+		Books:    app.BookRepository,
+		Renderer: app.Renderer,
+		Devices:  app.DeviceRepository,
+		States:   app.StateMachine,
+		Cache:    app.FrameCache,
+		Log:      app.Logger,
+	}
+
 	// Initialize the routes
-	handlers.InitRoutes(app, router)
+	handlers.InitRoutes(h, router)
 
 	// Run the server with graceful shutdown
 	core.RunHTTPServer(app, router)

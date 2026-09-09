@@ -32,13 +32,13 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ds, err := h.App.DeviceRepository.GetDeviceState(deviceID)
+	ds, err := h.Devices.GetDeviceState(deviceID)
 	if err != nil {
 		h.RespondWithError(w, err)
 		return
 	}
 
-	action, err := h.App.StateMachine.ApplyButton(r.Context(), ds, req.ButtonID, req.Type)
+	action, err := h.States.ApplyButton(r.Context(), ds, req.ButtonID, req.Type)
 	if err != nil {
 		h.RespondWithError(w, err)
 		return
@@ -55,13 +55,13 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if chapterID > 0 && h.App.FrameCache != nil {
-				h.App.FrameCache.Invalidate(fmt.Sprintf("%d", chapterID))
+			if chapterID > 0 && h.Cache != nil {
+				h.Cache.Invalidate(fmt.Sprintf("%d", chapterID))
 			}
 		}
 	}
 
-	if err := h.App.DeviceRepository.SaveDeviceState(ds); err != nil {
+	if err := h.Devices.SaveDeviceState(ds); err != nil {
 		h.RespondWithError(w, err)
 		return
 	}

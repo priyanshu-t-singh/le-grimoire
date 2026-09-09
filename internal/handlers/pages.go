@@ -18,7 +18,7 @@ func (h *Handler) CurrentPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ds, err := h.App.DeviceRepository.GetDeviceState(deviceID)
+	ds, err := h.Devices.GetDeviceState(deviceID)
 	if err != nil || ds == nil {
 		ds = state.NewDeviceState(deviceID)
 	}
@@ -40,7 +40,7 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 
 	switch top.Type {
 	case state.PageLibrary:
-		libraries, err := h.App.BookRepository.GetLibraries(ctx)
+		libraries, err := h.Books.GetLibraries(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("fetch libraries: %w", err)
 		}
@@ -48,10 +48,10 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageSeries:
-		seriesList, err := h.App.BookRepository.GetBooks(ctx, top.Params["library_id"])
+		seriesList, err := h.Books.GetBooks(ctx, top.Params["library_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch series: %w", err)
 		}
@@ -59,10 +59,10 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageBookList:
-		chapters, err := h.App.BookRepository.GetChapters(ctx, top.Params["series_id"])
+		chapters, err := h.Books.GetChapters(ctx, top.Params["series_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch chapters: %w", err)
 		}
@@ -70,14 +70,14 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageReader:
 		return h.renderReaderPage(ctx, top)
 
 	default:
 		html := render.BuildPlaceholderHTML(*top)
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 	}
 }
 
@@ -87,14 +87,14 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	bookPageIndex := p.State["book_page"]
 	subPageIndex := p.State["sub_page"]
 
-	h.App.Logger.Debug(fmt.Sprintf(
+	h.Log.Debug(fmt.Sprintf(
 		"Rendering reader page: chapter=%s, format=%s, book_page=%s, sub_page=%s",
 		chapterID, format, bookPageIndex, subPageIndex,
 	))
 
 	// Format 0: Manga / Comic
 	if format != "epub" {
-		imgBytes, err := h.App.BookRepository.PageContent(ctx, chapterID, subPageIndex)
+		imgBytes, err := h.Books.PageContent(ctx, chapterID, subPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch manga page %d: %w", subPageIndex, err)
 		}
@@ -103,10 +103,10 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 
 	// Format 1+: Book / EPUB
 	var frames [][]byte
-	if cachedFrames, exists := h.App.FrameCache.GetAllFrames(chapterID, bookPageIndex); exists {
+	if cachedFrames, exists := h.Cache.GetAllFrames(chapterID, bookPageIndex); exists {
 		frames = cachedFrames
 	} else {
-		rawHTML, err := h.App.BookRepository.PageContent(ctx, chapterID, bookPageIndex)
+		rawHTML, err := h.Books.PageContent(ctx, chapterID, bookPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch book content (chapter %d, page %d): %w", chapterID, bookPageIndex, err)
 		}
@@ -116,12 +116,12 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 			return nil, fmt.Errorf("build reader html: %w", err)
 		}
 
-		frames, err = h.App.Renderer.RenderBookFrames(ctx, renderedHTML, 24)
+		frames, err = h.Renderer.RenderBookFrames(ctx, renderedHTML, 24)
 		if err != nil {
 			return nil, fmt.Errorf("render book frames: %w", err)
 		}
 
-		h.App.FrameCache.Set(chapterID, bookPageIndex, frames)
+		h.Cache.Set(chapterID, bookPageIndex, frames)
 	}
 
 	if len(frames) == 0 {
