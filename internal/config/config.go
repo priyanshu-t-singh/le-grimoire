@@ -29,6 +29,12 @@ type Config struct {
 	BookBackend  string // "kavita" | "localfs"
 	KavitaURL    string
 	KavitaAPIKey string
+
+	// ChromeRemoteURL / ChromePath configure how the render package launches
+	// (or connects to) the headless Chrome instance used for page rendering.
+	// At most one of these should be set; ChromeRemoteURL takes priority.
+	ChromeRemoteURL string
+	ChromePath      string
 }
 
 type ConfigOptions struct {
@@ -55,6 +61,17 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	if os.Getenv("BOOK_BACKEND") != "" {
 		bookBackend = os.Getenv("BOOK_BACKEND")
 	}
+
+	kavitaURL := constants.KavitaAPIBaseURL
+	if os.Getenv("KAVITA_BASE_URL") != "" {
+		kavitaURL = os.Getenv("KAVITA_BASE_URL")
+	}
+	kavitaAPIKey := os.Getenv("KAVITA_API_KEY")
+
+	// NOTE: Chrome connection settings: env-only for now (no flag/config-file
+	// override), same as before this was centralized into Config.
+	chromeRemoteURL := os.Getenv("CHROME_REMOTE_URL")
+	chromePath := os.Getenv("CHROME_PATH")
 
 	defaultHost := constants.DefaultHost
 	defaultPort := constants.DefaultPort
@@ -101,6 +118,10 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	viper.SetDefault("database.name", "le-grimoire")
 	viper.SetDefault("logs.dir", "$LE_GRIMOIRE_DATA_DIR/logs")
 	viper.SetDefault("bookbackend", bookBackend)
+	viper.SetDefault("kavitaurl", kavitaURL)
+	viper.SetDefault("kavitaapikey", kavitaAPIKey)
+	viper.SetDefault("chromeremoteurl", chromeRemoteURL)
+	viper.SetDefault("chromepath", chromePath)
 
 	// Create and populate the config file if it doesn't exist
 	if err := createConfigFile(configPath); err != nil {

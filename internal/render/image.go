@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"le-grimoire/internal/constants"
-	"le-grimoire/internal/util"
 
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
@@ -37,13 +36,13 @@ type Renderer struct {
 }
 
 // NewRenderer initializes a Renderer based on priority:
-// 1. CHROME_REMOTE_URL (Remote headless container/instance)
-// 2. CHROME_PATH (Local custom binary)
+// 1. remoteURL (Remote headless container/instance)
+// 2. chromePath (Local custom binary)
 // 3. Default (Chromedp auto-discovers local Chrome/Chromium)
-func NewRenderer(baseCtx context.Context) *Renderer {
-	remoteURL := util.GetChromeRemoteURL()
-	chromePath := util.GetChromePath()
-
+//
+// Both parameters are expected to come from Config (ChromeRemoteURL /
+// ChromePath) — pass empty strings to fall through to auto-discovery.
+func NewRenderer(baseCtx context.Context, remoteURL string, chromePath string) *Renderer {
 	var (
 		allocCtx    context.Context
 		allocCancel context.CancelFunc
