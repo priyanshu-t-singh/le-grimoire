@@ -108,5 +108,5 @@ checksums: ## Generate SHA256 checksums for release binaries
 	@cd $(RELEASE_DIR)/$(VERSION) && shasum -a 256 * > checksums.txt
 	@echo "Checksums written to $(RELEASE_DIR)/$(VERSION)/checksums.txt"
 
-register-device: ## Register a device (usage: make register-device ID=... KEY=...)
-	go run cmd/register-device/main.go -id "$(ID)" -key "$(KEY)" -db "$(HOME)/.config/le-grimoire/le-grimoire.db"
+register-device: build ## Register a device (usage: make register-device ID=... KEY=...)
+	./$(BUILD_DIR)/$(BINARY_NAME) register-device --id "$(ID)" --key "$(KEY)" --db "$(HOME)/.config/le-grimoire/le-grimoire.db"

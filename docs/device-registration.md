@@ -6,13 +6,13 @@
 If you are running the server using Docker Compose, you can register a new device by executing the following command in the project root directory:
 
 ```sh
-docker compose run --rm le-grimoire register-device -id "<DEVICE_ID>" -key "<API_KEY>" -db ".db/database.sqlite"
+docker compose run --rm le-grimoire register-device --id "<DEVICE_ID>" --key "<API_KEY>" --db ".db/database.sqlite"
 ```
 
 example:
 
 ```sh
-docker compose run --rm le-grimoire register-device -id "esp32-test-device-01" -key "test-key" -db ".db/database.sqlite"
+docker compose run --rm le-grimoire register-device --id "esp32-test-device-01" --key "test-key" --db ".db/database.sqlite"
 ```
 
 ### (or) Local Registration
@@ -27,6 +27,13 @@ example:
 ```sh
 make register-device ID="esp32-test-device-01" KEY="test-key"
 ```
+
+Or run the binary directly:
+
+```sh
+le-grimoire register-device --id "esp32-test-device-01" --key "test-key"
+```
+
 
 ### Hardware Credentials
 
