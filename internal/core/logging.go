@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
+	"le-grimoire/internal/config"
 	"le-grimoire/internal/util"
-	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -12,22 +12,26 @@ import (
 	"github.com/lmittmann/tint"
 )
 
-func (a *App) InitLogging() {
+// NewLogger creates a dual console+file structured logger based on cfg.
+// The returned shutdown func closes the underlying log file; callers must
+// call it before the process exits.
+func NewLogger(cfg *config.Config) (*slog.Logger, func(), error) {
 	consoleHandler := tint.NewTextHandler(os.Stdout, &tint.Options{
 		Level:      slog.LevelDebug,
 		TimeFormat: time.TimeOnly,
 	})
 
-	if a.Config.Logs.Dir != "" {
-		if err := os.MkdirAll(a.Config.Logs.Dir, 0755); err != nil {
-			log.Fatalf("failed to create logs directory: %v\n", err)
+	if cfg.Logs.Dir != "" {
+		if err := os.MkdirAll(cfg.Logs.Dir, 0755); err != nil {
+			return nil, nil, fmt.Errorf("create logs dir: %w", err)
 		}
 	}
 
-	logFilePath := filepath.Join(a.Config.Logs.Dir, fmt.Sprintf("le-grimoire-%s.log", time.Now().Format("2006-01-02_15-04-05")))
+	logFileName := fmt.Sprintf("le-grimoire-%s.log", time.Now().Format("2006-01-02_15-04-05"))
+	logFilePath := filepath.Join(cfg.Logs.Dir, logFileName)
 	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatalf("failed to create log file: %v\n", err)
+		return nil, nil, fmt.Errorf("open log file: %w", err)
 	}
 
 	jsonHandler := slog.NewJSONHandler(logFile, &slog.HandlerOptions{
@@ -35,20 +39,16 @@ func (a *App) InitLogging() {
 		AddSource: true,
 	})
 
-	// Combine into root logger
-	multiHandler := util.NewMultiHandler(consoleHandler, jsonHandler)
-	wrappedHandler := &util.ContextHandler{Handler: multiHandler}
-	logger := slog.New(wrappedHandler)
-
-	// Bind to App & Global Default
-	a.Logger = logger
+	multi := util.NewMultiHandler(consoleHandler, jsonHandler)
+	wrapped := &util.ContextHandler{Handler: multi}
+	logger := slog.New(wrapped)
 	slog.SetDefault(logger)
 
-	// Set up shutdown function for logger
-	a.ShutdownLogger = func() {
+	shutdown := func() {
 		slog.Info("Shutting down logger...")
 		if err := logFile.Close(); err != nil {
 			slog.Error("failed to close log file", "error", err)
 		}
 	}
+	return logger, shutdown, nil
 }

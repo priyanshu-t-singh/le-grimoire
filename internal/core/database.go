@@ -1,29 +1,30 @@
 package core
 
 import (
+	"database/sql"
+	"fmt"
+	"le-grimoire/internal/config"
 	"le-grimoire/internal/database"
+	"log/slog"
 	"path/filepath"
 )
 
-func (a *App) InitDatabase() {
-	dbPath := filepath.Join(a.Config.AppDataDir, a.Config.Database.Name) + ".db"
+// NewDatabase opens the SQLite database and runs migrations.
+// The returned shutdown func closes the connection; callers must call it
+// before the process exits (after the HTTP server has stopped accepting requests).
+func NewDatabase(cfg *config.Config, logger *slog.Logger) (*sql.DB, func(), error) {
+	dbPath := filepath.Join(cfg.AppDataDir, cfg.Database.Name) + ".db"
 	db, err := database.Open(dbPath)
 	if err != nil {
-		a.Logger.Error("failed to open database", "err", err)
-		panic(err)
-	}
-	a.Database = db
-}
-
-func (a *App) ShutdownDatabase() {
-	if a.Database != nil {
-		return
+		return nil, nil, fmt.Errorf("open database: %w", err)
 	}
 
-	a.Logger.Info("Closing database connection...")
-	if err := a.Database.Close(); err != nil {
-		a.Logger.Error("error closing database", "error", err)
+	shutdown := func() {
+		logger.Info("Closing database connection...")
+		if err := db.Close(); err != nil {
+			logger.Error("error closing database", "error", err)
+		}
+		logger.Info("Database connection closed")
 	}
-
-	a.Logger.Info("Database connection closed")
+	return db, shutdown, nil
 }
