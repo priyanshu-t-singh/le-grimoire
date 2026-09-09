@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"le-grimoire/internal/config"
 	"le-grimoire/internal/constants"
-	"le-grimoire/internal/core"
 	"log/slog"
 	"os"
 	"runtime"
@@ -25,7 +24,7 @@ var rootCmd = &cobra.Command{
 
 		slog.Info("data dir", "data_dir", AppFlags.DataDir)
 		ctx := cmd.Context()
-		return runTerminalApp(ctx, nil)
+		return runTerminalApp(ctx)
 	},
 }
 
@@ -40,7 +39,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&AppFlags.DataDir, "datadir", "", "directory that contains all le-grimoire data")
 }
 
-func runTerminalApp(ctx context.Context, a *core.App) error {
+func runTerminalApp(ctx context.Context) error {
 	// TODO: Implement a terminal-based UI for the application.
 	slog.WarnContext(ctx, "Terminal UI is not yet implemented. Please use the 'serve' command to start the server.")
 	return nil
