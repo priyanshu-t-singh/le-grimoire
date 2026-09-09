@@ -15,11 +15,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func StartServer(flags config.LeGrimoireFlags) {
-	startApp(flags)
+func StartServer(ctx context.Context, flags config.LeGrimoireFlags) {
+	startApp(ctx, flags)
 }
 
-func startApp(flags config.LeGrimoireFlags) {
+func startApp(ctx context.Context, flags config.LeGrimoireFlags) {
 	// Load .env file if it exists
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
@@ -46,7 +46,7 @@ func startApp(flags config.LeGrimoireFlags) {
 		logger.Error("failed to initialize book provider", "error", err)
 		log.Fatal(err)
 	}
-	if err := books.Connect(context.Background()); err != nil {
+	if err := books.Connect(ctx); err != nil {
 		logger.Error("failed to connect to book provider", "error", err)
 		log.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func startApp(flags config.LeGrimoireFlags) {
 	// Concrete deps (order-independent past this point)
 	deviceRepo := device.NewDeviceRepository(db)
 	stateMachine := state.NewMachine(books, logger)
-	renderer := render.NewRenderer(context.Background(), cfg.ChromeRemoteURL, cfg.ChromePath)
+	renderer := render.NewRenderer(ctx, cfg.ChromeRemoteURL, cfg.ChromePath)
 	frameCache := render.NewFrameCache()
 
 	// App carry-bag — only what RunHTTPServer / graceful-shutdown needs
