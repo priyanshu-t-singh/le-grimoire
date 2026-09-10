@@ -68,10 +68,10 @@ lint: ## Run golangci-lint (requires installation)
 	golangci-lint run
 
 docker-build: ## Build and push a multi-platform Docker image
-	@echo "Building Docker image..."
+	@echo "Building Docker image $(FULL_IMAGE_NAME):$(VERSION)..."
 	docker buildx build \
 		--platform $(DOCKER_PLATFORM) \
-		-build-arg VERSION=$(VERSION) \
+		--build-arg VERSION=$(VERSION) \
 		-t $(FULL_IMAGE_NAME):$(VERSION) \
 		-t $(FULL_IMAGE_NAME):latest \
 		--push .

@@ -1,8 +1,5 @@
 services:
   le-grimoire:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: priyanshu9943/le-grimoire:latest
     container_name: le-grimoire
     restart: unless-stopped

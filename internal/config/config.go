@@ -136,6 +136,7 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	// Check if host or port have been overridden and differ from config file
 	existingHost := viper.GetString("server.host")
 	existingPort := viper.GetInt("server.port")
+	existingVersion := viper.GetString("version")
 	isHostChanged := false
 	isPortChanged := false
 
@@ -147,13 +148,16 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 		viper.Set("server.port", defaultPort)
 		isPortChanged = true
 	}
+	if existingVersion != constants.Version {
+		viper.Set("version", constants.Version)
+	}
 
 	// Write config if host or port have changed
-	if isHostChanged || isPortChanged {
+	if isHostChanged || isPortChanged || existingVersion != constants.Version {
 		if err := viper.WriteConfig(); err != nil {
-			logger.Warn("Failed to write updated config with new host/port", "error", err)
+			logger.Warn("Failed to write updated config", "error", err)
 		} else {
-			logger.Info("Updated config with new host/port", "host", defaultHost, "port", defaultPort)
+			logger.Info("Updated config", "host", defaultHost, "port", defaultPort)
 		}
 	}
 
