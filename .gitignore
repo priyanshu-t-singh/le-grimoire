@@ -35,4 +35,5 @@ go.work.sum
 
 # Others
 .logs/
-.db/
+.config/
+mise.toml

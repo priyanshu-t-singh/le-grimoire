@@ -3,7 +3,7 @@
 ## ⚙️ First-Time Device Setup
 
 ### Docker Compose Registration
-If you are running the server using Docker Compose, you can register a new device by executing the following command in the project root directory:
+If you are running the server using Docker Compose, you can register a new device by executing the following command in the project root directory, make sure you have run `docker compose up` first to start the server and then run the following command to register a new device:
 
 ```sh
 docker compose run --rm le-grimoire register-device --id "<DEVICE_ID>" --key "<API_KEY>"
