@@ -1,10 +1,9 @@
-package core
+package config
 
 import (
 	"errors"
 	"fmt"
 	"le-grimoire/internal/constants"
-	"le-grimoire/internal/util"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -26,6 +25,16 @@ type Config struct {
 	Database struct {
 		Name string
 	}
+
+	BookBackend  string // "kavita" | "localfs"
+	KavitaURL    string
+	KavitaAPIKey string
+
+	// ChromeRemoteURL / ChromePath configure how the render package launches
+	// (or connects to) the headless Chrome instance used for page rendering.
+	// At most one of these should be set; ChromeRemoteURL takes priority.
+	ChromeRemoteURL string
+	ChromePath      string
 }
 
 type ConfigOptions struct {
@@ -47,6 +56,22 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	if flags.DataDir != "" {
 		definedDataDir = flags.DataDir
 	}
+
+	bookBackend := "kavita" // default backend
+	if os.Getenv("BOOK_BACKEND") != "" {
+		bookBackend = os.Getenv("BOOK_BACKEND")
+	}
+
+	kavitaURL := constants.KavitaAPIBaseURL
+	if os.Getenv("KAVITA_BASE_URL") != "" {
+		kavitaURL = os.Getenv("KAVITA_BASE_URL")
+	}
+	kavitaAPIKey := os.Getenv("KAVITA_API_KEY")
+
+	// NOTE: Chrome connection settings: env-only for now (no flag/config-file
+	// override), same as before this was centralized into Config.
+	chromeRemoteURL := os.Getenv("CHROME_REMOTE_URL")
+	chromePath := os.Getenv("CHROME_PATH")
 
 	defaultHost := constants.DefaultHost
 	defaultPort := constants.DefaultPort
@@ -92,6 +117,11 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	viper.SetDefault("server.port", defaultPort)
 	viper.SetDefault("database.name", "le-grimoire")
 	viper.SetDefault("logs.dir", "$LE_GRIMOIRE_DATA_DIR/logs")
+	viper.SetDefault("bookbackend", bookBackend)
+	viper.SetDefault("kavitaurl", kavitaURL)
+	viper.SetDefault("kavitaapikey", kavitaAPIKey)
+	viper.SetDefault("chromeremoteurl", chromeRemoteURL)
+	viper.SetDefault("chromepath", chromePath)
 
 	// Create and populate the config file if it doesn't exist
 	if err := createConfigFile(configPath); err != nil {
@@ -106,6 +136,7 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 	// Check if host or port have been overridden and differ from config file
 	existingHost := viper.GetString("server.host")
 	existingPort := viper.GetInt("server.port")
+	existingVersion := viper.GetString("version")
 	isHostChanged := false
 	isPortChanged := false
 
@@ -117,13 +148,16 @@ func NewConfig(options *ConfigOptions, logger *slog.Logger) (*Config, error) {
 		viper.Set("server.port", defaultPort)
 		isPortChanged = true
 	}
+	if existingVersion != constants.Version {
+		viper.Set("version", constants.Version)
+	}
 
 	// Write config if host or port have changed
-	if isHostChanged || isPortChanged {
+	if isHostChanged || isPortChanged || existingVersion != constants.Version {
 		if err := viper.WriteConfig(); err != nil {
-			logger.Warn("Failed to write updated config with new host/port", "error", err)
+			logger.Warn("Failed to write updated config", "error", err)
 		} else {
-			logger.Info("Updated config with new host/port", "host", defaultHost, "port", defaultPort)
+			logger.Info("Updated config", "host", defaultHost, "port", defaultPort)
 		}
 	}
 
@@ -145,11 +179,6 @@ func (cfg *Config) GetServerAddr() string {
 
 func (cfg *Config) GetServerURI() string {
 	return fmt.Sprintf("http://%s", cfg.GetServerAddr())
-}
-
-// TODO: remove this func
-func (cfg *Config) GetKavitaAPIURI() string {
-	return util.GetKavitaAPIKey()
 }
 
 func initAppDataDir(definedDataDir string, logger *slog.Logger) (dataDir string, configPath string, err error) {

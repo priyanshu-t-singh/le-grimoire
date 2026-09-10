@@ -31,5 +31,7 @@ scripts/
 client/
 
 # Others
+.config/
 .logs/
-.db/
+api/
+mise.toml

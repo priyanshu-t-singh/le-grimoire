@@ -58,7 +58,7 @@ func runServerWithGracefulShutdown(app *App, server *http.Server) {
 		app.Logger.Error("server forced to shutdown", "error", err)
 	}
 
-	app.ShutdownDatabase()
+	app.ShutdownDB()
 	app.ShutdownLogger()
 	slog.Info("Shutdown complete")
 }

@@ -13,7 +13,6 @@ type buttonRequest struct {
 	Type     string `json:"type"`      // Expected values: "short_press", "long_press"
 }
 
-// TODO: Check if this struct still required after testing.
 type pushButtonResponse struct {
 	Action string            `json:"action"`
 	State  state.DeviceState `json:"state"`
@@ -32,13 +31,13 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ds, err := h.App.DeviceRepository.GetDeviceState(deviceID)
+	ds, err := h.Devices.GetDeviceState(deviceID)
 	if err != nil {
 		h.RespondWithError(w, err)
 		return
 	}
 
-	action, err := h.App.StateMachine.ApplyButton(r.Context(), ds, req.ButtonID, req.Type)
+	action, err := h.States.ApplyButton(r.Context(), ds, req.ButtonID, req.Type)
 	if err != nil {
 		h.RespondWithError(w, err)
 		return
@@ -48,20 +47,20 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 	if (req.ButtonID == "E") && (req.Type == "long" || req.Type == "long_press") {
 		top := ds.Top()
 		if top.Type == state.PageReader {
-			var chapterID int
-			_, err := fmt.Sscanf(top.Params["chapter_id"], "%d", &chapterID)
+			var chapterID string
+			_, err := fmt.Sscanf(top.Params["chapter_id"], "%s", &chapterID)
 			if err != nil {
 				h.RespondWithError(w, err)
 				return
 			}
 
-			if chapterID > 0 && h.App.FrameCache != nil {
-				h.App.FrameCache.Invalidate(chapterID)
+			if chapterID != "" && h.Cache != nil {
+				h.Cache.Invalidate(chapterID)
 			}
 		}
 	}
 
-	if err := h.App.DeviceRepository.SaveDeviceState(ds); err != nil {
+	if err := h.Devices.SaveDeviceState(ds); err != nil {
 		h.RespondWithError(w, err)
 		return
 	}

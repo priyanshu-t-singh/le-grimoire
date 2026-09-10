@@ -6,17 +6,19 @@ import (
 	"net/http"
 	"strings"
 
-	"le-grimoire/internal/core"
 	"le-grimoire/internal/models"
 )
 
 type Handler struct {
-	App *core.App
+	Books    BookStore
+	Renderer PageRenderer
+	Devices  DeviceStore
+	States   StateMachiner
+	Cache    FrameStore
+	Log      Logger
 }
 
-func InitRoutes(app *core.App, router *http.ServeMux) {
-	h := &Handler{App: app}
-
+func InitRoutes(h *Handler, router *http.ServeMux) {
 	v1 := http.NewServeMux()
 	v1.HandleFunc("GET /health", h.HealthCheckHandler)
 	v1.HandleFunc("GET /current_page", h.CurrentPageHandler)

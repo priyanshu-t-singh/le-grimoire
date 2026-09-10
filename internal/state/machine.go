@@ -3,21 +3,19 @@ package state
 import (
 	"context"
 	"fmt"
+	"le-grimoire/internal/library"
 	"log/slog"
-	"strconv"
-
-	"le-grimoire/internal/kavita"
 )
 
 type Machine struct {
-	kavita kavita.Repository
-	logger *slog.Logger
+	library library.BookProvider
+	logger  *slog.Logger
 }
 
-func NewMachine(kavita kavita.Repository, logger *slog.Logger) *Machine {
+func NewMachine(library library.BookProvider, logger *slog.Logger) *Machine {
 	return &Machine{
-		kavita: kavita,
-		logger: logger,
+		library: library,
+		logger:  logger,
 	}
 }
 
@@ -81,7 +79,7 @@ func (m *Machine) applyListButton(ctx context.Context, ds *DeviceState, p *Page,
 func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) (string, error) {
 	switch p.Type {
 	case PageLibrary:
-		libraries, err := m.kavita.GetLibraries(ctx)
+		libraries, err := m.library.GetLibraries(ctx)
 		if err != nil {
 			return "", fmt.Errorf("fetch libraries: %w", err)
 		}
@@ -92,14 +90,14 @@ func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) 
 		selected := libraries[p.State["cursor"]]
 		ds.Push(Page{
 			Type:   PageSeries,
-			Params: map[string]string{"library_id": strconv.Itoa(selected.ID)},
+			Params: map[string]string{"library_id": selected.ID},
 			State:  map[string]int{"cursor": 0, "scroll": 0},
 		})
-		return fmt.Sprintf("selected library %s (id: %d) -> pushed Series", selected.Name, selected.ID), nil
+		return fmt.Sprintf("selected library %s (id: %s) -> pushed Series", selected.Name, selected.ID), nil
 
 	case PageSeries:
-		libraryID, _ := strconv.Atoi(p.Params["library_id"])
-		seriesList, err := m.kavita.GetSeries(ctx, libraryID)
+		libraryID := p.Params["library_id"]
+		seriesList, err := m.library.GetBooks(ctx, libraryID)
 		if err != nil {
 			return "", fmt.Errorf("fetch series: %w", err)
 		}
@@ -111,16 +109,16 @@ func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) 
 		ds.Push(Page{
 			Type: PageBookList,
 			Params: map[string]string{
-				"series_id": strconv.Itoa(selected.ID),
-				"format":    strconv.Itoa(selected.Format),
+				"series_id": selected.ID,
+				"format":    selected.Format,
 			},
 			State: map[string]int{"cursor": 0, "scroll": 0},
 		})
-		return fmt.Sprintf("selected series %s (id: %d) -> pushed BookList", selected.Name, selected.ID), nil
+		return fmt.Sprintf("selected series %s (id: %s) -> pushed BookList", selected.Title, selected.ID), nil
 
 	case PageBookList:
-		seriesID, _ := strconv.Atoi(p.Params["series_id"])
-		chapters, err := m.kavita.GetFlattenedChapters(ctx, seriesID)
+		seriesID := p.Params["series_id"]
+		chapters, err := m.library.GetChapters(ctx, seriesID)
 		if err != nil {
 			return "", fmt.Errorf("fetch chapters: %w", err)
 		}
@@ -133,15 +131,15 @@ func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) 
 			Type: PageReader,
 			Params: map[string]string{
 				"series_id":  p.Params["series_id"],
-				"volume_id":  strconv.Itoa(selected.VolumeID),
-				"chapter_id": strconv.Itoa(selected.ID),
+				"volume_id":  selected.BookID,
+				"chapter_id": selected.ID,
 				"format":     p.Params["format"],
 			},
 			// book_page: which Kavita-level fragment is loaded (0-indexed)
 			// sub_page:  which rendered 24-line frame within that fragment
 			State: map[string]int{"book_page": 0, "sub_page": 0},
 		})
-		return fmt.Sprintf("selected chapter %s (id: %d) -> pushed Reader", selected.Title, selected.ID), nil
+		return fmt.Sprintf("selected chapter %s (id: %s) -> pushed Reader", selected.Title, selected.ID), nil
 	}
 
 	return "select: nothing to do", nil
@@ -194,12 +192,12 @@ func (m *Machine) applyReaderButton(ctx context.Context, ds *DeviceState, p *Pag
 // the current chapter. Resets sub_page to 0 since scroll position is meaningless
 // across a fragment change.
 func (m *Machine) navigateBookPage(ctx context.Context, ds *DeviceState, p *Page, direction int) (string, error) {
-	chapterID, _ := strconv.Atoi(p.Params["chapter_id"])
-	meta, err := m.kavita.GetChapterMetadata(ctx, chapterID)
+	chapterID := p.Params["chapter_id"]
+	meta, err := m.library.GetChapterInfo(ctx, chapterID)
 	if err != nil {
 		return "", fmt.Errorf("navigate book page: %w", err)
 	}
-	totalPages := meta.Pages
+	totalPages := meta.TotalPages
 	if totalPages <= 0 {
 		totalPages = 1
 	}
@@ -219,10 +217,10 @@ func (m *Machine) navigateBookPage(ctx context.Context, ds *DeviceState, p *Page
 
 // advances or reverses the active chapter inside the Reader view.
 func (m *Machine) navigateChapter(ctx context.Context, ds *DeviceState, p *Page, direction int) (string, error) {
-	seriesID, _ := strconv.Atoi(p.Params["series_id"])
-	currentChapterID, _ := strconv.Atoi(p.Params["chapter_id"])
+	seriesID := p.Params["series_id"]
+	currentChapterID := p.Params["chapter_id"]
 
-	chapters, err := m.kavita.GetFlattenedChapters(ctx, seriesID)
+	chapters, err := m.library.GetChapters(ctx, seriesID)
 	if err != nil {
 		return "", fmt.Errorf("navigate chapter: %w", err)
 	}
@@ -248,8 +246,8 @@ func (m *Machine) navigateChapter(ctx context.Context, ds *DeviceState, p *Page,
 	}
 
 	targetChapter := chapters[targetIdx]
-	p.Params["chapter_id"] = strconv.Itoa(targetChapter.ID)
-	p.Params["volume_id"] = strconv.Itoa(targetChapter.VolumeID)
+	p.Params["chapter_id"] = targetChapter.ID
+	p.Params["volume_id"] = targetChapter.BookID
 	p.State["book_page"] = 0
 	p.State["sub_page"] = 0
 	ds.UpdatedAt = ds.UpdatedAt.UTC()
@@ -262,30 +260,30 @@ func (m *Machine) navigateChapter(ctx context.Context, ds *DeviceState, p *Page,
 		}
 	}
 
-	return fmt.Sprintf("switched chapter to %s (id: %d)", targetChapter.Title, targetChapter.ID), nil
+	return fmt.Sprintf("switched chapter to %s (id: %s)", targetChapter.Title, targetChapter.ID), nil
 }
 
 // calculates dynamic boundary counts for cursor navigation.
 func (m *Machine) getItemCount(ctx context.Context, p *Page) (int, error) {
 	switch p.Type {
 	case PageLibrary:
-		libs, err := m.kavita.GetLibraries(ctx)
+		libs, err := m.library.GetLibraries(ctx)
 		if err != nil {
 			return 0, err
 		}
 		return len(libs), nil
 
 	case PageSeries:
-		libID, _ := strconv.Atoi(p.Params["library_id"])
-		seriesList, err := m.kavita.GetSeries(ctx, libID)
+		libID := p.Params["library_id"]
+		seriesList, err := m.library.GetBooks(ctx, libID)
 		if err != nil {
 			return 0, err
 		}
 		return len(seriesList), nil
 
 	case PageBookList:
-		seriesID, _ := strconv.Atoi(p.Params["series_id"])
-		chapters, err := m.kavita.GetFlattenedChapters(ctx, seriesID)
+		seriesID := p.Params["series_id"]
+		chapters, err := m.library.GetChapters(ctx, seriesID)
 		if err != nil {
 			return 0, err
 		}

@@ -1,7 +1,9 @@
 package main
 
-import "le-grimoire/internal/server"
+import (
+	"le-grimoire/cmd"
+)
 
 func main() {
-	server.StartServer()
+	cmd.Execute()
 }

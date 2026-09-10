@@ -8,15 +8,17 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"le-grimoire/internal/device"
 )
 
 type contextKey string
 
 const DeviceIDKey contextKey = "device_id"
 
-func DeviceAuth(repo *device.Repository) func(http.Handler) http.Handler {
+type AuthStore interface {
+	GetDeviceAuthHash(deviceID string) (string, error)
+}
+
+func DeviceAuth(repo AuthStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			deviceID := r.Header.Get("X-Device-Id")

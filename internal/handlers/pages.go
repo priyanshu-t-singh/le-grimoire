@@ -18,7 +18,7 @@ func (h *Handler) CurrentPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ds, err := h.App.DeviceRepository.GetDeviceState(deviceID)
+	ds, err := h.Devices.GetDeviceState(deviceID)
 	if err != nil || ds == nil {
 		ds = state.NewDeviceState(deviceID)
 	}
@@ -40,7 +40,7 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 
 	switch top.Type {
 	case state.PageLibrary:
-		libraries, err := h.App.KavitaRepository.GetLibraries(ctx)
+		libraries, err := h.Books.GetLibraries(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("fetch libraries: %w", err)
 		}
@@ -48,11 +48,10 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageSeries:
-		libID, _ := strconv.Atoi(top.Params["library_id"])
-		seriesList, err := h.App.KavitaRepository.GetSeries(ctx, libID)
+		seriesList, err := h.Books.GetBooks(ctx, top.Params["library_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch series: %w", err)
 		}
@@ -60,11 +59,10 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageBookList:
-		seriesID, _ := strconv.Atoi(top.Params["series_id"])
-		chapters, err := h.App.KavitaRepository.GetFlattenedChapters(ctx, seriesID)
+		chapters, err := h.Books.GetChapters(ctx, top.Params["series_id"])
 		if err != nil {
 			return nil, fmt.Errorf("fetch chapters: %w", err)
 		}
@@ -72,64 +70,59 @@ func (h *Handler) renderCurrentState(ctx context.Context, ds *state.DeviceState)
 		if err != nil {
 			return nil, err
 		}
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 
 	case state.PageReader:
 		return h.renderReaderPage(ctx, top)
 
 	default:
 		html := render.BuildPlaceholderHTML(*top)
-		return h.App.Renderer.RenderListPage(ctx, html)
+		return h.Renderer.RenderListPage(ctx, html)
 	}
 }
 
 func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, error) {
-	chapterID, _ := strconv.Atoi(p.Params["chapter_id"])
-	format, _ := strconv.Atoi(p.Params["format"])
+	chapterID := p.Params["chapter_id"]
+	format := p.Params["format"]
 	bookPageIndex := p.State["book_page"]
 	subPageIndex := p.State["sub_page"]
 
-	h.App.Logger.Debug(fmt.Sprintf(
-		"Rendering reader page: chapter=%d, format=%d, book_page=%d, sub_page=%d",
-		chapterID, format, bookPageIndex, subPageIndex,
-	))
+	h.Log.Debug("Rendering reader page", "chapter", chapterID, "format", format, "book_page", bookPageIndex, "sub_page", subPageIndex)
 
 	// Format 0: Manga / Comic
-	// TODO: Requires testing
-	if format == 0 {
-		imgBytes, err := h.App.KavitaRepository.GetChapterPageImage(ctx, chapterID, subPageIndex)
+	if format != "epub" {
+		imgBytes, err := h.Books.PageContent(ctx, chapterID, subPageIndex)
 		if err != nil {
 			return nil, fmt.Errorf("fetch manga page %d: %w", subPageIndex, err)
 		}
-		return render.ProcessMangaImage(imgBytes)
+		return render.ProcessMangaImage(imgBytes.Data)
 	}
 
 	// Format 1+: Book / EPUB
 	var frames [][]byte
-	if cachedFrames, exists := h.App.FrameCache.GetAllFrames(chapterID, bookPageIndex); exists {
+	if cachedFrames, exists := h.Cache.GetAllFrames(chapterID, bookPageIndex); exists {
 		frames = cachedFrames
 	} else {
-		rawHTML, err := h.App.KavitaRepository.GetBookPage(ctx, chapterID, bookPageIndex)
+		rawHTML, err := h.Books.PageContent(ctx, chapterID, bookPageIndex)
 		if err != nil {
-			return nil, fmt.Errorf("fetch book content (chapter %d, page %d): %w", chapterID, bookPageIndex, err)
+			return nil, fmt.Errorf("fetch book content (chapter %s, page %d): %w", chapterID, bookPageIndex, err)
 		}
 
-		cleanHTML := render.SanitizeEPUBHTML(rawHTML, h.App.Config.GetKavitaAPIURI())
-		renderedHTML, err := render.BuildReaderHTML(cleanHTML)
+		renderedHTML, err := render.BuildReaderHTML(string(rawHTML.Data))
 		if err != nil {
 			return nil, fmt.Errorf("build reader html: %w", err)
 		}
 
-		frames, err = h.App.Renderer.RenderBookFrames(ctx, renderedHTML, 24)
+		frames, err = h.Renderer.RenderBookFrames(ctx, renderedHTML, 24)
 		if err != nil {
 			return nil, fmt.Errorf("render book frames: %w", err)
 		}
 
-		h.App.FrameCache.Set(chapterID, bookPageIndex, frames)
+		h.Cache.Set(chapterID, bookPageIndex, frames)
 	}
 
 	if len(frames) == 0 {
-		return nil, fmt.Errorf("no rendered frames produced for chapter %d (book_page %d)", chapterID, bookPageIndex)
+		return nil, fmt.Errorf("no rendered frames produced for chapter %s (book_page %d)", chapterID, bookPageIndex)
 	}
 
 	// Clamp sub_page within current fragment frames
