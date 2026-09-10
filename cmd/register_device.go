@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"modernc.org/sqlite"
@@ -22,7 +25,12 @@ var registerDeviceCmd = &cobra.Command{
 		dbPath, _ := cmd.Flags().GetString("db")
 
 		if deviceID == "" || rawKey == "" {
-			log.Fatalf("Usage: le-grimoire register-device --id <device_id> --key <api_key>")
+			log.Fatalf("Usage: le-grimoire register-device --id <device_id> --key <api_key> ")
+		}
+
+		dbPath, err := expandPath(dbPath)
+		if err != nil {
+			log.Fatalf("Failed to expand db path: %v", err)
 		}
 
 		db, err := sql.Open("sqlite", dbPath)
@@ -58,9 +66,27 @@ func hashDeviceKey(key string) string {
 	return hex.EncodeToString(h[:])
 }
 
+func expandPath(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("--db should not be empty")
+	}
+
+	if !strings.HasPrefix(path, "~") {
+		return path, nil
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user home directory: %w", err)
+	}
+
+	// Join the home directory with the rest of the path
+	return filepath.Join(homeDir, path[1:]), nil
+}
+
 func init() {
 	registerDeviceCmd.Flags().String("id", "", "Unique Device ID (e.g. esp32-4in2-01)")
 	registerDeviceCmd.Flags().String("key", "", "Raw API key to be hardcoded in firmware")
-	registerDeviceCmd.Flags().String("db", ".db/le-grimoire.db", "Path to SQLite database")
+	registerDeviceCmd.Flags().String("db", "~/.config/le-grimoire/le-grimoire.db", "Path to SQLite database")
 	rootCmd.AddCommand(registerDeviceCmd)
 }
