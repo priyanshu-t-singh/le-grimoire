@@ -33,6 +33,10 @@ var registerDeviceCmd = &cobra.Command{
 			log.Fatalf("Failed to expand db path: %v", err)
 		}
 
+		if err := os.MkdirAll(filepath.Dir(dbPath), 0o755); err != nil {
+			log.Fatalf("Failed to create db directory: %v", err)
+		}
+
 		db, err := sql.Open("sqlite", dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open DB: %v", err)
