@@ -62,7 +62,6 @@ func hashDeviceKey(key string) string {
 func init() {
 	registerDeviceCmd.Flags().String("id", "", "Unique Device ID (e.g. esp32-4in2-01)")
 	registerDeviceCmd.Flags().String("key", "", "Raw API key to be hardcoded in firmware")
-	registerDeviceCmd.Flags().String("db", ".db/app.db", "Path to SQLite database")
-
+	registerDeviceCmd.Flags().String("db", ".db/le-grimoire.db", "Path to SQLite database")
 	rootCmd.AddCommand(registerDeviceCmd)
 }
