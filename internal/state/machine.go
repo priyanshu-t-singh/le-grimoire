@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"le-grimoire/internal/library"
 	"log/slog"
-	"strconv"
 )
 
 type Machine struct {
@@ -97,8 +96,8 @@ func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) 
 		return fmt.Sprintf("selected library %s (id: %s) -> pushed Series", selected.Name, selected.ID), nil
 
 	case PageSeries:
-		libraryID, _ := strconv.Atoi(p.Params["library_id"])
-		seriesList, err := m.library.GetBooks(ctx, strconv.Itoa(libraryID))
+		libraryID := p.Params["library_id"]
+		seriesList, err := m.library.GetBooks(ctx, libraryID)
 		if err != nil {
 			return "", fmt.Errorf("fetch series: %w", err)
 		}
@@ -118,8 +117,8 @@ func (m *Machine) selectFromList(ctx context.Context, ds *DeviceState, p *Page) 
 		return fmt.Sprintf("selected series %s (id: %s) -> pushed BookList", selected.Title, selected.ID), nil
 
 	case PageBookList:
-		seriesID, _ := strconv.Atoi(p.Params["series_id"])
-		chapters, err := m.library.GetChapters(ctx, strconv.Itoa(seriesID))
+		seriesID := p.Params["series_id"]
+		chapters, err := m.library.GetChapters(ctx, seriesID)
 		if err != nil {
 			return "", fmt.Errorf("fetch chapters: %w", err)
 		}

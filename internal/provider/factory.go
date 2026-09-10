@@ -5,7 +5,6 @@ import (
 	"le-grimoire/internal/config"
 	"le-grimoire/internal/library"
 	"le-grimoire/internal/provider/kavita"
-	"le-grimoire/internal/provider/localfs"
 )
 
 func NewBookProvider(cfg config.Config) (library.BookProvider, error) {

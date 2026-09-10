@@ -87,10 +87,7 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	bookPageIndex := p.State["book_page"]
 	subPageIndex := p.State["sub_page"]
 
-	h.Log.Debug(fmt.Sprintf(
-		"Rendering reader page: chapter=%s, format=%s, book_page=%s, sub_page=%s",
-		chapterID, format, bookPageIndex, subPageIndex,
-	))
+	h.Log.Debug("Rendering reader page", "chapter", chapterID, "format", format, "book_page", bookPageIndex, "sub_page", subPageIndex)
 
 	// Format 0: Manga / Comic
 	if format != "epub" {
@@ -108,7 +105,7 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	} else {
 		rawHTML, err := h.Books.PageContent(ctx, chapterID, bookPageIndex)
 		if err != nil {
-			return nil, fmt.Errorf("fetch book content (chapter %d, page %d): %w", chapterID, bookPageIndex, err)
+			return nil, fmt.Errorf("fetch book content (chapter %s, page %d): %w", chapterID, bookPageIndex, err)
 		}
 
 		renderedHTML, err := render.BuildReaderHTML(string(rawHTML.Data))
@@ -125,7 +122,7 @@ func (h *Handler) renderReaderPage(ctx context.Context, p *state.Page) ([]byte, 
 	}
 
 	if len(frames) == 0 {
-		return nil, fmt.Errorf("no rendered frames produced for chapter %d (book_page %d)", chapterID, bookPageIndex)
+		return nil, fmt.Errorf("no rendered frames produced for chapter %s (book_page %d)", chapterID, bookPageIndex)
 	}
 
 	// Clamp sub_page within current fragment frames

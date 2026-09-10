@@ -13,7 +13,6 @@ type buttonRequest struct {
 	Type     string `json:"type"`      // Expected values: "short_press", "long_press"
 }
 
-// TODO: Check if this struct still required after testing.
 type pushButtonResponse struct {
 	Action string            `json:"action"`
 	State  state.DeviceState `json:"state"`
@@ -48,15 +47,15 @@ func (h *Handler) PushButtonHandler(w http.ResponseWriter, r *http.Request) {
 	if (req.ButtonID == "E") && (req.Type == "long" || req.Type == "long_press") {
 		top := ds.Top()
 		if top.Type == state.PageReader {
-			var chapterID int
-			_, err := fmt.Sscanf(top.Params["chapter_id"], "%d", &chapterID)
+			var chapterID string
+			_, err := fmt.Sscanf(top.Params["chapter_id"], "%s", &chapterID)
 			if err != nil {
 				h.RespondWithError(w, err)
 				return
 			}
 
-			if chapterID > 0 && h.Cache != nil {
-				h.Cache.Invalidate(fmt.Sprintf("%d", chapterID))
+			if chapterID != "" && h.Cache != nil {
+				h.Cache.Invalidate(chapterID)
 			}
 		}
 	}

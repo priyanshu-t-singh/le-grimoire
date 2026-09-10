@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"modernc.org/sqlite"
-	_ "modernc.org/sqlite"
 )
 
 var registerDeviceCmd = &cobra.Command{
