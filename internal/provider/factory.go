@@ -13,7 +13,7 @@ func NewBookProvider(cfg config.Config) (library.BookProvider, error) {
 	case "kavita":
 		return kavita.New(cfg.KavitaURL, cfg.KavitaAPIKey), nil
 	case "localfs":
-		return localfs.New(cfg.AppDataDir), nil
+		return nil, fmt.Errorf("localfs backend is not implemented yet")
 	default:
 		return nil, fmt.Errorf("unknown backend %q", cfg.BookBackend)
 	}
