@@ -1,4 +1,5 @@
-@baseUrl = http://localhost:8080/api/v1
+@baseUrl = http://localhost:8321
+@baseAPIv1Url = {{baseUrl}}/api/v1
 @deviceId = esp32-test-device-01
 @apiKey = test-key
 
@@ -8,12 +9,12 @@ GET {{baseUrl}}/health
 
 
 ### Get Current Page
-GET {{baseUrl}}/current_page
+GET {{baseAPIv1Url}}/current_page
 X-Device-Id: {{deviceId}}
 Authorization: Bearer {{apiKey}}
 
 ### Push Button
-POST {{baseUrl}}/push_button
+POST {{baseAPIv1Url}}/push_button
 X-Device-Id: {{deviceId}}
 Authorization: Bearer {{apiKey}}
 
@@ -23,7 +24,7 @@ Authorization: Bearer {{apiKey}}
 }
 
 ### Long Button press
-POST {{baseUrl}}/push_button
+POST {{baseAPIv1Url}}/push_button
 X-Device-Id: {{deviceId}}
 Authorization: Bearer {{apiKey}}
 

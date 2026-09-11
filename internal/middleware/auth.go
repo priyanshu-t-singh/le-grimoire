@@ -25,7 +25,7 @@ func DeviceAuth(repo AuthStore) func(http.Handler) http.Handler {
 			authHeader := r.Header.Get("Authorization")
 
 			// Ignore /health endpoint for authentication
-			if r.URL.Path == "/api/v1/health" {
+			if r.URL.Path == "/health" || r.URL.Path == "/simulator" {
 				next.ServeHTTP(w, r)
 				return
 			}
