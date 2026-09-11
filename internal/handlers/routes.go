@@ -19,8 +19,10 @@ type Handler struct {
 }
 
 func InitRoutes(h *Handler, router *http.ServeMux) {
+	router.HandleFunc("GET /health", h.HealthCheckHandler)
+	router.HandleFunc("GET /simulator", h.SimulatorHandler)
+
 	v1 := http.NewServeMux()
-	v1.HandleFunc("GET /health", h.HealthCheckHandler)
 	v1.HandleFunc("GET /current_page", h.CurrentPageHandler)
 	v1.HandleFunc("POST /push_button", h.PushButtonHandler)
 
