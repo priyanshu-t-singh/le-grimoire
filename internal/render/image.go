@@ -12,6 +12,9 @@ import (
 	"strings"
 	"time"
 
+	_ "image/jpeg" // register JPEG decoder
+	_ "image/png"  // register PNG decoder
+
 	"le-grimoire/internal/constants"
 
 	"github.com/chromedp/cdproto/emulation"
