@@ -18,7 +18,7 @@ var tmpl = template.Must(template.New("simulator").Parse(templates.ClientSimulat
 
 func (h *Handler) SimulatorHandler(w http.ResponseWriter, r *http.Request) {
 	data := SimulatorPageData{
-		BaseURL: r.Host,
+		BaseURL: "http://" + r.Host,
 	}
 
 	err := tmpl.Execute(w, data)

@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
+	"le-grimoire/internal/util"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,24 +22,47 @@ var registerDeviceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		deviceID, _ := cmd.Flags().GetString("id")
 		rawKey, _ := cmd.Flags().GetString("key")
-		dbPath := filepath.Join(AppFlags.DataDir, "le-grimoire.db")
+
+		logger := util.NewLogger()
+
+		var dataDir string
+		if dataDir = AppFlags.DataDir; dataDir == "" {
+			logger.WarnContext(cmd.Context(), "Data directory not specified, using default path", "default_path", "~/.config/le-grimoire")
+			configDir, err := os.UserConfigDir()
+			if err != nil {
+				logger.ErrorContext(cmd.Context(), "Failed to get user config directory", "error", err)
+				return
+			}
+			dataDir = filepath.Join(configDir, "le-grimoire")
+		}
+
+		if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+			logger.ErrorContext(cmd.Context(), "Data directory does not exist. Please run the server once to create the directory and database.", "data_dir", dataDir)
+			return
+		}
+
+		dbPath := filepath.Join(dataDir, "le-grimoire.db")
 
 		if deviceID == "" || rawKey == "" {
-			log.Fatalf("Usage: le-grimoire register-device --id <device_id> --key <api_key> ")
+			logger.ErrorContext(cmd.Context(), "Missing required arguments", "usage", "le-grimoire register-device --id <device_id> --key <api_key> ")
+			return
 		}
 
 		dbPath, err := expandPath(dbPath)
 		if err != nil {
-			log.Fatalf("Failed to expand db path: %v", err)
+			logger.ErrorContext(cmd.Context(), "Failed to expand db path", "error", err)
+			return
 		}
 
 		if err := os.MkdirAll(filepath.Dir(dbPath), 0o755); err != nil {
-			log.Fatalf("Failed to create db directory: %v", err)
+			logger.ErrorContext(cmd.Context(), "Failed to create db directory", "error", err)
+			return
 		}
 
 		db, err := sql.Open("sqlite", dbPath)
 		if err != nil {
-			log.Fatalf("Failed to open DB: %v", err)
+			logger.ErrorContext(cmd.Context(), "Failed to open DB", "error", err)
+			return
 		}
 		defer db.Close()
 
@@ -53,15 +76,12 @@ var registerDeviceCmd = &cobra.Command{
 				// 2067 = SQLITE_CONSTRAINT_UNIQUE
 				// 1555 = SQLITE_CONSTRAINT_PRIMARYKEY
 				if sqliteErr.Code() == 2067 || sqliteErr.Code() == 1555 {
-					log.Fatalf("Device ID %s already exists (unique constraint violation)", deviceID)
+					logger.ErrorContext(cmd.Context(), "Device ID already exists", "device_id", deviceID)
 				}
 			}
-			log.Fatalf("Failed to insert device: %v", err)
+			logger.ErrorContext(cmd.Context(), "Failed to insert device", "error", err)
 		}
-
-		fmt.Printf("Device successfully provisioned!\n")
-		fmt.Printf("Device ID : %s\n", deviceID)
-		fmt.Printf("API Key   : %s\n", rawKey)
+		logger.InfoContext(cmd.Context(), "Device successfully provisioned!", "device_id", deviceID)
 	},
 }
 
