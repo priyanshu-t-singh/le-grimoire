@@ -22,7 +22,7 @@ var registerDeviceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		deviceID, _ := cmd.Flags().GetString("id")
 		rawKey, _ := cmd.Flags().GetString("key")
-		dbPath, _ := cmd.Flags().GetString("db")
+		dbPath := filepath.Join(AppFlags.DataDir, "le-grimoire.db")
 
 		if deviceID == "" || rawKey == "" {
 			log.Fatalf("Usage: le-grimoire register-device --id <device_id> --key <api_key> ")
@@ -72,7 +72,7 @@ func hashDeviceKey(key string) string {
 
 func expandPath(path string) (string, error) {
 	if path == "" {
-		return "", fmt.Errorf("--db should not be empty")
+		return "", fmt.Errorf("datadir path should not be empty")
 	}
 
 	if !strings.HasPrefix(path, "~") {
@@ -91,6 +91,5 @@ func expandPath(path string) (string, error) {
 func init() {
 	registerDeviceCmd.Flags().String("id", "", "Unique Device ID (e.g. esp32-4in2-01)")
 	registerDeviceCmd.Flags().String("key", "", "Raw API key to be hardcoded in firmware")
-	registerDeviceCmd.Flags().String("db", "~/.config/le-grimoire/le-grimoire.db", "Path to SQLite database")
 	rootCmd.AddCommand(registerDeviceCmd)
 }
