@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"le-grimoire/internal/config"
 	"le-grimoire/internal/constants"
-	"log/slog"
+	"le-grimoire/internal/tui"
 	"os"
 	"runtime"
 
@@ -21,10 +21,7 @@ var rootCmd = &cobra.Command{
 	Version: fmt.Sprintf("%s (%s/%s)", constants.Version, runtime.GOOS, runtime.GOARCH),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		AppFlags.Clean()
-
-		slog.Info("data dir", "data_dir", AppFlags.DataDir)
-		ctx := cmd.Context()
-		return runTerminalApp(ctx)
+		return runTerminalApp(cmd.Context())
 	},
 }
 
@@ -39,8 +36,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&AppFlags.DataDir, "datadir", "", "directory that contains all le-grimoire data")
 }
 
+// runTerminalApp is the default action when no subcommand is given.
+// It launches the full-screen terminal book reader.
 func runTerminalApp(ctx context.Context) error {
-	// TODO: Implement a terminal-based UI for the application.
-	slog.WarnContext(ctx, "Terminal UI is not yet implemented. Please use the 'serve' command to start the server.")
-	return nil
+	return tui.Start(ctx, AppFlags)
 }
