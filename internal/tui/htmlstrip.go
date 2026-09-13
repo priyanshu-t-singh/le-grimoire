@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -39,6 +40,7 @@ var blockElements = map[string]bool{
 }
 
 var noTextElements = map[string]bool{
+	"head":     true,
 	"script":   true,
 	"style":    true,
 	"noscript": true,
@@ -47,6 +49,62 @@ var noTextElements = map[string]bool{
 	"iframe":   true,
 	"object":   true,
 	"canvas":   true,
+}
+
+var ansiRegexp = regexp.MustCompile(`\x1b\[[0-?]*[ -/]*[@-~]`) // basic CSI sequences
+var oscRegexp = regexp.MustCompile(`\x1b\][^\x07]*\x07`)       // OSC ... BEL
+
+// removes common bidi control characters that can be used for spoofing.
+func removeBiDi(s string) string {
+	// Unicode bidi control ranges and specific chars to remove
+	bidi := []rune{
+		'\u202A', '\u202B', '\u202C', '\u202D', '\u202E',
+		'\u2066', '\u2067', '\u2068', '\u2069',
+	}
+	rb := strings.Builder{}
+	for _, r := range s {
+		skip := false
+		for _, b := range bidi {
+			if r == b {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			rb.WriteRune(r)
+		}
+	}
+	return rb.String()
+}
+
+func sanitizeForTerminal(s string, maxLen int) string {
+	// Remove explicit CR, remove ANSI/OSC sequences
+	s = ansiRegexp.ReplaceAllString(s, "")
+	s = oscRegexp.ReplaceAllString(s, "")
+	// Remove other ESC-starting sequences loosely (safety)
+	s = strings.ReplaceAll(s, "\x1b", "")
+
+	// Strip C0/C1 control characters except LF and TAB
+	s = strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\t' {
+			return r
+		}
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, s)
+
+	s = removeBiDi(s)
+
+	// Enforce reasonable max length using runes to avoid breaking UTF-8 characters
+	if maxLen > 0 && len(s) > maxLen {
+		runes := []rune(s)
+		if len(runes) > maxLen {
+			s = string(runes[:maxLen]) + "\n\n[output truncated]\n"
+		}
+	}
+	return s
 }
 
 // StripHTML converts raw HTML to plain text suitable for terminal display.
@@ -103,7 +161,7 @@ func StripHTML(raw string) string {
 	}
 
 	walk(doc)
-	return collapseWhitespace(sb.String())
+	return sanitizeForTerminal(collapseWhitespace(sb.String()), 0)
 }
 
 // naiveStripTags is a last-resort fallback that removes angle-bracket tags
@@ -122,7 +180,7 @@ func naiveStripTags(s string) string {
 			sb.WriteRune(r)
 		}
 	}
-	return sb.String()
+	return sanitizeForTerminal(sb.String(), 0)
 }
 
 func collapseWhitespace(s string) string {
