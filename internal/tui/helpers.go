@@ -17,7 +17,7 @@ func chapterLabel(c library.Chapter) string {
 
 func buildContentMsg(content *library.PageContent, totalPages int, width int) tea.Msg {
 	if content.Type == library.ContentImage {
-		return contentLoadedMsg{lines: nil, isImagePage: true, totalPages: totalPages, listCursor: -1}
+		return contentLoadedMsg{lines: nil, plain: "", isImagePage: true, totalPages: totalPages, listCursor: -1}
 	}
 	raw := string(content.Data)
 	plain := StripHTML(raw)
@@ -29,9 +29,9 @@ func buildContentMsg(content *library.PageContent, totalPages int, width int) te
 	lines = trimBlankLines(lines)
 
 	if len(lines) == 0 {
-		return contentLoadedMsg{lines: nil, isImagePage: true, totalPages: totalPages, listCursor: -1}
+		return contentLoadedMsg{lines: nil, plain: plain, isImagePage: true, totalPages: totalPages, listCursor: -1}
 	}
-	return contentLoadedMsg{lines: lines, isImagePage: false, totalPages: totalPages, listCursor: -1}
+	return contentLoadedMsg{lines: lines, plain: plain, isImagePage: false, totalPages: totalPages, listCursor: -1}
 }
 
 func trimBlankLines(lines []string) []string {

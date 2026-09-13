@@ -29,6 +29,7 @@ type itemsLoadedMsg struct {
 
 type contentLoadedMsg struct {
 	lines       []string
+	plain       string
 	isImagePage bool
 	totalPages  int
 	page        *state.Page
@@ -50,6 +51,7 @@ type Model struct {
 	cursor int
 
 	content      []string
+	plainContent string
 	line         int
 	isImagePage  bool
 	chapterTitle string
@@ -80,6 +82,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		
+		if m.view == viewReader && m.plainContent != "" {
+			oldTotal := len(m.content)
+			pct := 0.0
+			if oldTotal > 0 {
+				pct = float64(m.line) / float64(oldTotal)
+			}
+			
+			wrapWidth := m.width - 2
+			if wrapWidth < 20 {
+				wrapWidth = 20
+			}
+			lines := WordWrap(m.plainContent, wrapWidth)
+			m.content = trimBlankLines(lines)
+			
+			if oldTotal > 0 {
+				m.line = int(pct * float64(len(m.content)))
+			}
+		}
+		
 		return m, nil
 
 	case itemsLoadedMsg:
@@ -123,6 +145,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.content = msg.lines
+		m.plainContent = msg.plain
 		m.isImagePage = msg.isImagePage
 		m.totalPages = msg.totalPages
 		m.line = 0
