@@ -4,6 +4,9 @@ import tea "charm.land/bubbletea/v2"
 
 func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
+	if m.loading && key != "q" && key != "ctrl+c" {
+		return m, nil
+	}
 	if m.view == viewReader {
 		return m.handleReaderKey(key)
 	}
