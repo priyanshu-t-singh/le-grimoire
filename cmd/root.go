@@ -16,8 +16,8 @@ var AppFlags config.LeGrimoireFlags
 
 var rootCmd = &cobra.Command{
 	Use:     "le-grimoire",
-	Short:   "A simple e-ink book reader server",
-	Long:    `Le Grimoire is a simple e-ink book reader server that serves books to e-ink devices.`,
+	Short:   "A terminal e-ink book reader",
+	Long:    `Le Grimoire is a terminal e-ink book reader.`,
 	Version: fmt.Sprintf("%s (%s/%s)", constants.Version, runtime.GOOS, runtime.GOARCH),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		AppFlags.Clean()
