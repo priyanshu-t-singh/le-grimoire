@@ -150,14 +150,17 @@ func (m *Model) nextBookPage() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.loading = true
-	p.State["book_page"] = next
-	p.State["sub_page"] = 0
 	return m, func() tea.Msg {
 		content, err := m.books.PageContent(m.ctx, chapterID, next)
 		if err != nil {
 			return errMsg{err}
 		}
-		return buildContentMsg(content, m.totalPages, m.width)
+		msg := buildContentMsg(content, m.totalPages, m.width)
+		if cm, ok := msg.(contentLoadedMsg); ok {
+			cm.update = &state.Page{State: map[string]int{"book_page": next, "sub_page": 0}}
+			return cm
+		}
+		return msg
 	}
 }
 
