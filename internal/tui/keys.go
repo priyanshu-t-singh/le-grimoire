@@ -50,6 +50,8 @@ func (m *Model) handleReaderKey(key string) (tea.Model, tea.Cmd) {
 	case "up", "k":
 		if m.line > 0 {
 			m.line--
+		} else {
+			return m.prevBookPage()
 		}
 	case "down", "j", "enter", "l", " ":
 		if m.line+bodyHeight < totalLines {

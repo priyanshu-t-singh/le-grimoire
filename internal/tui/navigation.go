@@ -141,6 +141,30 @@ func (m *Model) goBack() (tea.Model, tea.Cmd) {
 	return m, m.fetchCurrentList()
 }
 
+func (m *Model) prevBookPage() (tea.Model, tea.Cmd) {
+	p := m.ds.Top()
+	chapterID := p.Params["chapter_id"]
+	current := p.State["book_page"]
+	prev := current - 1
+	if prev < 0 {
+		return m, nil
+	}
+	m.loading = true
+	return m, func() tea.Msg {
+		content, err := m.books.PageContent(m.ctx, chapterID, prev)
+		if err != nil {
+			return errMsg{err}
+		}
+		msg := buildContentMsg(content, m.totalPages, m.width)
+		if cm, ok := msg.(contentLoadedMsg); ok {
+			cm.update = &state.Page{State: map[string]int{"book_page": prev, "sub_page": 0}}
+			cm.goToBottom = true
+			return cm
+		}
+		return msg
+	}
+}
+
 func (m *Model) nextBookPage() (tea.Model, tea.Cmd) {
 	p := m.ds.Top()
 	chapterID := p.Params["chapter_id"]

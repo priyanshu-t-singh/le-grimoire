@@ -36,6 +36,7 @@ type contentLoadedMsg struct {
 	update      *state.Page
 	title       string
 	listCursor  int
+	goToBottom  bool
 }
 
 type errMsg struct{ err error }
@@ -148,7 +149,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.plainContent = msg.plain
 		m.isImagePage = msg.isImagePage
 		m.totalPages = msg.totalPages
-		m.line = 0
+		if msg.goToBottom && len(m.content) > 0 {
+			bodyHeight := m.height - 2
+			if bodyHeight < 1 {
+				bodyHeight = 1
+			}
+			m.line = len(m.content) - bodyHeight
+			if m.line < 0 {
+				m.line = 0
+			}
+		} else {
+			m.line = 0
+		}
 		return m, nil
 
 	case errMsg:
