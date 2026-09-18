@@ -60,9 +60,26 @@ func (m *Model) handleReaderKey(key string) (tea.Model, tea.Cmd) {
 			return m.nextBookPage()
 		}
 	case "pgup":
-		return m.prevChapter()
+		if m.line > 0 {
+			m.line -= bodyHeight
+			if m.line < 0 {
+				m.line = 0
+			}
+		} else {
+			return m.prevBookPage()
+		}
 	case "pgdn":
-		return m.nextChapter()
+		if m.line+bodyHeight < totalLines {
+			m.line += bodyHeight
+			if m.line+bodyHeight > totalLines {
+				m.line = totalLines - bodyHeight
+				if m.line < 0 {
+					m.line = 0
+				}
+			}
+		} else {
+			return m.nextBookPage()
+		}
 	case "h", "backspace":
 		return m.goBack()
 	}
